@@ -24,13 +24,13 @@ public class CraneController : MonoBehaviour
         // Get vertical input (up/down arrow keys or W/S keys)
         float moveVertical = Input.GetAxis("Vertical"); // Up/Down Arrow or W/S keys
 
-        // Move the crane forward/backward (along the Z-axis)
-        Vector3 moveDirection = transform.forward * moveVertical * moveSpeed * Time.deltaTime;
+        // Move the crane left/right (along the X-axis) based on up/down arrow keys
+        Vector3 moveDirection = transform.right * moveVertical * moveSpeed * Time.deltaTime;
 
-        // Move the crane left/right (along the X-axis)
-        Vector3 strafeDirection = transform.right * moveHorizontal * moveSpeed * Time.deltaTime;
+        // Move the crane forward/backward (along the Z-axis) based on left/right arrow keys
+        Vector3 strafeDirection = transform.forward * moveHorizontal * moveSpeed * Time.deltaTime;
 
-        // Apply horizontal movement (forward/backward and left/right)
+        // Apply movement along X and Z axes based on updated directions
         rb.MovePosition(rb.position + moveDirection + strafeDirection);
 
         // Rotate the crane based on left/right arrow key (or A/D)
