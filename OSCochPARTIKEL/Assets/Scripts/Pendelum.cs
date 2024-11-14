@@ -4,71 +4,88 @@ using UnityEngine;
 
 public class Pendelum : MonoBehaviour
 {
-    public Transform pivot;           // The pivot of the pendulum (should be moving with crane)
-    public float length = 5f;         // Length of the pendulum
-    public float gravity = 9.81f;     // Gravitational constant
-    public float damping = 0.995f;    // Damping factor to reduce motion over time
-    public float initialAngle = 45f;  // Initial angle in degrees
-    public float angularVelocity = 0f; // Initial angular velocity
+    public Transform pivot;             // The pivot of the pendulum (moving with crane)
+    public float length = 5f;           // Length of the pendulum
+    public float gravity = 9.81f;       // Gravitational constant
+    public float damping = 0.995f;      // Damping factor to reduce motion over time
+    public float initialAngleX = 45f;   // Initial angle in degrees along X-axis
+    public float initialAngleZ = 45f;   // Initial angle in degrees along Z-axis
 
-    private float angleInRadians;     // Angle in radians
-    private float angularAcceleration; // Angular acceleration
+    private float angleInRadiansX;      // Angle in radians along X-axis
+    private float angleInRadiansZ;      // Angle in radians along Z-axis
+    private float angularVelocityX = 0f; // Initial angular velocity along X-axis
+    private float angularVelocityZ = 0f; // Initial angular velocity along Z-axis
+    private float angularAccelerationX; // Angular acceleration along X-axis
+    private float angularAccelerationZ; // Angular acceleration along Z-axis
     private Vector3 previousPivotPosition; // To store the previous position of the pivot
+    private Vector3 pivotVelocity;         // Current velocity of the pivot
+    private Vector3 previousPivotVelocity;  // Previous frame's pivot velocity
+    private Vector3 pivotAcceleration;      // Acceleration of the pivot
 
     void Start()
     {
-        // Convert the initial angle from degrees to radians
-        angleInRadians = initialAngle * Mathf.Deg2Rad;
-        
+        // Convert the initial angles from degrees to radians
+        angleInRadiansX = initialAngleX * Mathf.Deg2Rad;
+        angleInRadiansZ = initialAngleZ * Mathf.Deg2Rad;
+
         // Initialize previousPivotPosition
         previousPivotPosition = pivot.position;
+        previousPivotVelocity = Vector3.zero;
     }
 
     void Update()
     {
-        // Calculate movement of the pivot and adjust pendulum motion accordingly
-        Vector3 pivotDelta = pivot.position - previousPivotPosition;
-        
-        // Update the pendulum's motion based on the current pivot position and movement
-        UpdatePendulumMotion(pivotDelta);
+        // Calculate pivot velocity and acceleration
+        pivotVelocity = (pivot.position - previousPivotPosition) / Time.deltaTime;
+        pivotAcceleration = (pivotVelocity - previousPivotVelocity) / Time.deltaTime;
 
-        // Update the pendulum's position relative to the moving pivot
+        // Update pendulum motion based on current pivot acceleration
+        UpdatePendulumMotion(pivotAcceleration);
+
+        // Update pendulum position relative to the moving pivot
         UpdatePendulumPosition();
 
-        // Store the current pivot position for the next frame
+        // Store current pivot position and velocity for the next frame
         previousPivotPosition = pivot.position;
+        previousPivotVelocity = pivotVelocity;
     }
 
-    void UpdatePendulumMotion(Vector3 pivotDelta)
+    void UpdatePendulumMotion(Vector3 pivotAcceleration)
     {
-        // Calculate angular acceleration (force due to gravity)
-        angularAcceleration = -(gravity / length) * Mathf.Sin(angleInRadians);
+        // Calculate gravitational angular acceleration
+        angularAccelerationX = -(gravity / length) * Mathf.Sin(angleInRadiansX);
+        angularAccelerationZ = -(gravity / length) * Mathf.Sin(angleInRadiansZ);
 
-        // Update the angular velocity based on the angular acceleration
-        angularVelocity += angularAcceleration * Time.deltaTime;
+        // Apply pivot acceleration effect on angular acceleration, opposing pendulum movement
+        angularAccelerationX += pivotAcceleration.z / length;
+        angularAccelerationZ += pivotAcceleration.x / length;
 
-        // Adjust angular velocity based on the pivot movement
-        float pivotAngleEffect = Mathf.Atan2(pivotDelta.y, pivotDelta.x);
-        angularVelocity += pivotAngleEffect / length;
+        // Update angular velocities with the calculated angular acceleration
+        angularVelocityX += angularAccelerationX * Time.deltaTime;
+        angularVelocityZ += angularAccelerationZ * Time.deltaTime;
 
-        // Update the angle based on the angular velocity
-        angleInRadians += angularVelocity * Time.deltaTime;
+        // Update angles based on angular velocities
+        angleInRadiansX += angularVelocityX * Time.deltaTime;
+        angleInRadiansZ += angularVelocityZ * Time.deltaTime;
 
         // Apply damping to reduce motion over time
-        angularVelocity *= damping;
+        angularVelocityX *= damping;
+        angularVelocityZ *= damping;
     }
 
     void UpdatePendulumPosition()
     {
         if (pivot != null)
         {
-            // Calculate the new position of the pendulum based on the angle and pivot position
-            Vector3 pendulumPosition = pivot.position + new Vector3(Mathf.Sin(angleInRadians) * length,
-                                                                    -Mathf.Cos(angleInRadians) * length,
-                                                                    0f);
+            // Calculate the pendulum's new position based on the pivot and angle
+            Vector3 pendulumOffset = new Vector3(
+                Mathf.Sin(angleInRadiansX) * length,
+                -Mathf.Cos(angleInRadiansX) * length,
+                Mathf.Sin(angleInRadiansZ) * length
+            );
 
-            // Update the pendulum's position in the world
-            transform.position = pendulumPosition;
+            // Update pendulum position relative to the pivot
+            transform.position = pivot.position + pendulumOffset;
         }
     }
 }
