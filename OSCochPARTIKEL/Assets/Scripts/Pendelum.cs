@@ -56,9 +56,9 @@ public class Pendelum : MonoBehaviour
         angularAccelerationX = -(gravity / length) * Mathf.Sin(angleInRadiansX);
         angularAccelerationZ = -(gravity / length) * Mathf.Sin(angleInRadiansZ);
 
-        // Apply pivot acceleration effect on angular acceleration, opposing pendulum movement
-        angularAccelerationX += pivotAcceleration.z / length;
-        angularAccelerationZ += pivotAcceleration.x / length;
+        // Apply pivot acceleration effect in the opposite direction for correct pendulum response
+        angularAccelerationX -= pivotAcceleration.x / length; // Reversed X influence
+        angularAccelerationZ -= pivotAcceleration.z / length; // Reversed Z influence
 
         // Update angular velocities with the calculated angular acceleration
         angularVelocityX += angularAccelerationX * Time.deltaTime;
